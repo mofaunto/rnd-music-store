@@ -1,3 +1,4 @@
+import math
 import json
 import random
 from pathlib import Path
@@ -35,7 +36,8 @@ async def health_check():
 async def get_songs(
     lang: str = Query("en-US", description="Language/Region code"),
     seed: int = Query(12345, description="64-bit seed value"),
-    page: int = Query(1, description="Page number for pagination")
+    page: int = Query(1, description="Page number for pagination"),
+    likes: float = Query(0.0, description="Average likes per song")
 ):
     locale_data = LOCALES.get(lang, LOCALES.get("en-US", {}))
 
@@ -62,13 +64,24 @@ async def get_songs(
             album = f"{rng.choice(locale_data['album_adjectives'])} {rng.choice(locale_data['album_nouns'])}"
         
         genre = rng.choice(locale_data['genres'])
+
+        if likes == 0.0:
+            like_count = 0
+        elif likes >= 10.0:
+            like_count = 10
+        else:
+            # if avarage is 3.7, we roughly give 3 or 4 likes.
+            floor_likes = math.floor(likes)
+            remainder = likes - floor_likes
+            like_count = floor_likes + (1 if rng.random() < remainder else 0)
         
         songs.append({
             "index": (page - 1) * 10 + (i + 1), # global sequence number
             "title": title,
             "artist": artist,
             "album": album,
-            "genre": genre
+            "genre": genre,
+            "likes": like_count
         })
 
     return {"page": page, "songs": songs}

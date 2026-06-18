@@ -38,7 +38,7 @@ export const useStore = create<AppState>((set, get) => ({
       return updated;
     });
 
-    const { fetchSongs } = get();
+    // const { fetchSongs } = get();
   },
 
   fetchSongs: async (baseUrl: string) => {

@@ -1,0 +1,9 @@
+{
+  "first_names": ["John", "Sarah", "Michael", "Emma", "David", "Laura", "James", "Olivia", "Robert", "Sophia"],
+  "last_names": ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez"],
+  "band_prefixes": ["The", "Electric", "Atomic", "Silent", "Major", "Wild", "Cosmic", "Crystal", "Midnight", "Iron"],
+  "band_suffixes": ["Band", "Orchestra", "Trio", "Collective", "Machine", "Squad", "Alliance", "Express", "Project", "Syndicate"],
+  "album_adjectives": ["Golden", "Broken", "Shining", "Dark", "Hidden", "Eternal", "Rising", "Fading", "Silent", "Burning"],
+  "album_nouns": ["Dreams", "Echoes", "Horizon", "Sunset", "Shadows", "Midnight", "Thunder", "Secrets", "Paradise", "Roads"],
+  "genres": ["House", "Electronic", "Rock", "Pop", "Folk", "Heavy Metal", "Jazz", "Punk", "Indie", "Alternative"]
+}

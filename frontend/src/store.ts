@@ -27,6 +27,8 @@ interface AppState {
   toggleExpand: (songId: number) => void;
 }
 
+const fetchingPages = new Set<number>(); 
+
 export const useStore = create<AppState>((set, get) => ({
   lang: 'en-US',
   seed: 12345,
@@ -41,7 +43,6 @@ export const useStore = create<AppState>((set, get) => ({
   setParams: (newParams) => {
     set((state) => {
       const updated = { ...state, ...newParams };
-      // If lang, seed, or likes change, reset page to 1
       if (newParams.lang || newParams.seed || newParams.likes || newParams.currentView) {
         updated.page = 1;
         updated.songs = [];
@@ -59,31 +60,42 @@ export const useStore = create<AppState>((set, get) => ({
         `${baseUrl}/api/songs?lang=${lang}&seed=${seed}&page=1&likes=${likes}`
       );
       const data = await response.json();
-      set({ songs: data.songs, isLoading: false, hasMore: data.songs.length > 0 });
+      set({ songs: data.songs, page: 1, isLoading: false, hasMore: data.songs.length > 0 });
     } catch (error) {
       console.error('Failed to fetch songs:', error);
       set({ isLoading: false });
     }
   },
 
-  // infinite scroll
   fetchNextPage: async (baseUrl: string) => {
-    const { lang, seed, page, likes, songs } = get();
+    const { lang, seed, likes, isLoading, hasMore, page: currentPage } = get();
+    if (isLoading || !hasMore) return; 
+
+    const nextPage = currentPage + 1;
+
+    if (fetchingPages.has(nextPage)) {
+      return;
+    }
+    fetchingPages.add(nextPage);
     set({ isLoading: true });
+
     try {
       const response = await fetch(
-        `${baseUrl}/api/songs?lang=${lang}&seed=${seed}&page=${page}&likes=${likes}`
+        `${baseUrl}/api/songs?lang=${lang}&seed=${seed}&page=${nextPage}&likes=${likes}`
       );
       const data = await response.json();
-      set({ 
-        songs: [...songs, ...data.songs], 
-        page: page + 1, 
+
+      set(state => ({
+        songs: [...state.songs, ...data.songs],
+        page: nextPage,
         isLoading: false,
-        hasMore: data.songs.length > 0 
-      });
+        hasMore: data.songs.length > 0
+      }));
     } catch (error) {
       console.error('Failed to fetch songs:', error);
       set({ isLoading: false });
+    } finally {
+      fetchingPages.delete(nextPage);
     }
   },
 

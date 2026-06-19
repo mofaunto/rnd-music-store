@@ -68,22 +68,24 @@ export default function GalleryView() {
           {songs.map((song, index) => {
             const isExpanded = expandedSongId === song.index;
             const detailData = details[song.index];
-            const coverUrl = `https://picsum.photos/seed/${seed}_${song.index}/400/400`;
+            const pageForCover = Math.ceil(song.index / 10);
+            const coverUrl = `${apiBaseUrl}/api/cover/${song.index}?lang=${lang}&seed=${seed}&page=${pageForCover}&title=${encodeURIComponent(song.title)}&artist=${encodeURIComponent(song.artist)}`;
 
             return (
               <div 
-                key={song.index}
+                key={`${song.index}-${page}`}
                 ref={index === songs.length - 1 ? lastCardRef : null}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col"
                 onClick={() => handleExpand(song.index)}
               >
                 <div className="relative w-full aspect-square bg-gray-100">
                   <img 
+                    key={`${song.index}-${page}`}
                     src={coverUrl} 
                     alt={`${song.title} cover`} 
                     className="w-full h-full object-cover"
                     loading="lazy"
-                  />
+                    />
                   <div className="absolute top-2 right-2 bg-black/60 flex flex-col items-center justify-center text-white text-xs font-medium px-2 py-1 gap-1 rounded-full">
                     <Heart className="w-3 h-3 fill-current" />
                     {song.likes}

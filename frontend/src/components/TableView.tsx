@@ -41,6 +41,7 @@ export default function TableView() {
               songs.map((song) => {
                 const isExpanded = expandedSongId === song.index;
                 const detailData = details[song.index];
+                const coverUrl = `${apiBaseUrl}/api/cover/${song.index}?lang=${lang}&seed=${seed}&page=${page}&title=${encodeURIComponent(song.title)}&artist=${encodeURIComponent(song.artist)}`;
 
                 return (
                   <React.Fragment key={song.index}>
@@ -63,7 +64,7 @@ export default function TableView() {
                             <div className="flex flex-col sm:flex-row gap-6">
                               <div className="shrink-0 flex justify-center sm:justify-start">
                                 <img 
-                                  src={detailData.cover_url} 
+                                  src={coverUrl}
                                   alt="Album Cover" 
                                   className="w-32 h-32 rounded-lg shadow-md object-cover bg-gray-200"
                                 />

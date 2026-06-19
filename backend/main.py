@@ -85,3 +85,43 @@ async def get_songs(
         })
 
     return {"page": page, "songs": songs}
+
+
+# song metadata
+@app.get("/api/details/{song_id}")
+async def get_song_details(
+    song_id: int,
+    lang: str = Query("en-US", description="Language/Region code"),
+    seed: int = Query(12345, description="64-bit seed value"),
+    page: int = Query(1, description="Page number")
+):
+    locale_data = LOCALES.get(lang, LOCALES.get("en-US", {}))
+    
+    final_seed = seed ^ (page * 0x9e3779b97f4a7c15) ^ (song_id * 0x9e3779b97f4a7c15)
+    rng = random.Random(final_seed)
+    
+    cover_url = f"https://picsum.photos/seed/{final_seed}/300/300"
+    
+    reviewer = f"{rng.choice(locale_data['first_names'])} {rng.choice(locale_data['last_names'])}"
+    review_phrases = [
+        "Absolutely breathtaking track, a true masterpiece!",
+        "Love the vibe, but the mixing could be better.",
+        "This one's going straight to my playlist.",
+        "Incredible melody, I can't stop listening.",
+        "Not quite my style, but well produced.",
+        "The chorus is a bit repetitive, but it's catchy!"
+    ]
+    review = f"\"{rng.choice(review_phrases)}\" — {reviewer}"
+    
+    lyrics = [
+        f"Under the {rng.choice(locale_data['album_nouns']).lower()} we stand",
+        f"Our {rng.choice(locale_data['album_adjectives']).lower()} dreams fill the land",
+        f"Just like a {rng.choice(locale_data['genres']).lower()} refrain"
+    ]
+    
+    return {
+        "song_id": song_id,
+        "cover_url": cover_url,
+        "review": review,
+        "lyrics": lyrics
+    }

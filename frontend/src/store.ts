@@ -16,8 +16,12 @@ interface AppState {
   page: number;
   songs: Song[];
   isLoading: boolean;
+  expandedSongId: number | null;
+  currentView: 'table' | 'gallery';
+
   setParams: (newParams: Partial<AppState>) => void;
   fetchSongs: (baseUrl: string) => Promise<void>;
+  toggleExpand: (songId: number) => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -27,6 +31,8 @@ export const useStore = create<AppState>((set, get) => ({
   page: 1,
   songs: [],
   isLoading: false,
+  expandedSongId: null,
+  currentView: 'table',
 
   setParams: (newParams) => {
     set((state) => {
@@ -37,8 +43,6 @@ export const useStore = create<AppState>((set, get) => ({
       }
       return updated;
     });
-
-    // const { fetchSongs } = get();
   },
 
   fetchSongs: async (baseUrl: string) => {
@@ -52,5 +56,11 @@ export const useStore = create<AppState>((set, get) => ({
       console.error('Failed to fetch songs:', error);
       set({ isLoading: false });
     }
+  },
+
+  toggleExpand: (songId: number) => {
+    set((state) => ({
+      expandedSongId: state.expandedSongId === songId ? null : songId
+    }));
   }
 }));

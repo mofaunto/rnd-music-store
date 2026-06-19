@@ -5,6 +5,7 @@ import random
 import os
 from utils.locale import load_locales
 from utils.image_gen import generate_cover_image, COVER_CACHE_DIR
+from pathlib import Path
 
 router = APIRouter()
 LOCALES = load_locales()
@@ -111,3 +112,15 @@ async def get_cover(
     generate_cover_image(file_path, title, artist, rng)
     
     return FileResponse(file_path, media_type="image/png")
+
+
+@router.get("/api/audio/{song_id}")
+async def get_audio(
+    song_id: int,
+    seed: int = Query(12345, description="64-bit seed value"),
+    page: int = Query(1, description="Page number")
+):
+    track_index = abs((seed ^ (page * 0x9e3779b97f4a7c15) ^ (song_id * 0x9e3779b97f4a7c15))) % 100
+    
+    audio_path = Path("static/audio") / f"track_{track_index}.mp3"
+    return FileResponse(audio_path, media_type="audio/mpeg")

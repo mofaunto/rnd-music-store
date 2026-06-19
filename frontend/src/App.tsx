@@ -3,29 +3,34 @@ import debounce from 'lodash.debounce';
 import { useStore } from './store';
 import Toolbar from './components/Toolbar';
 import TableView from './components/TableView';
+import GalleryView from './components/GalleryView';
 
 function App() {
-  const { fetchSongs, lang, seed, likes, page, currentView } = useStore();
+  const { fetchFirstPage, lang, seed, likes, currentView,songs } = useStore();
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
-  const debouncedFetch = useMemo(() => {
+  const debouncedFirstFetch = useMemo(() => {
     return debounce(() => {
       if (apiBaseUrl) {
-        fetchSongs(apiBaseUrl);
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        fetchFirstPage(apiBaseUrl);
       }
     }, 300);
-  }, [fetchSongs, apiBaseUrl]);
+  }, [fetchFirstPage, apiBaseUrl]);
 
   useEffect(() => {
-    debouncedFetch();
-    return () => debouncedFetch.cancel();
-  }, [lang, seed, likes, page, debouncedFetch]);
+    if (songs.length === 0) {
+      debouncedFirstFetch();
+    }
+    
+    return () => debouncedFirstFetch.cancel();
+  }, [lang, seed, likes, songs.length, debouncedFirstFetch]);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
+    <div className="min-h-screen bg-gray-50 pb-20">
       <Toolbar />
-      <div className="max-w-6xl mx-auto px-4">
-        {currentView === 'table' ? <TableView /> : <div>Hello World!</div>}
+      <div className="max-w-7xl mx-auto px-4">
+        {currentView === 'table' ? <TableView /> : <GalleryView />}
       </div>
     </div>
   );

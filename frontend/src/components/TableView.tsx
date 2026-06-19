@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../store';
 
 export default function TableView() {
-  const { songs, page, isLoading, expandedSongId, toggleExpand, setParams, lang, seed } = useStore();
+  const { songs, page, isLoading, expandedSongId, toggleExpand, lang, seed, fetchPage } = useStore();
   const [details, setDetails] = useState<{ [key: number]: any }>({});
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -61,14 +61,14 @@ export default function TableView() {
                         <td colSpan={6} className="px-4 py-6">
                           {detailData ? (
                             <div className="flex flex-col sm:flex-row gap-6">
-                              <div className="flex-shrink-0 flex justify-center sm:justify-start">
+                              <div className="shrink-0 flex justify-center sm:justify-start">
                                 <img 
                                   src={detailData.cover_url} 
                                   alt="Album Cover" 
                                   className="w-32 h-32 rounded-lg shadow-md object-cover bg-gray-200"
                                 />
                               </div>
-                              <div className="flex-grow space-y-3">
+                              <div className="grow space-y-3">
                                 <div className="flex items-center gap-4">
                                   <button className="px-4 py-2 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 transition-colors">
                                     Play Preview
@@ -100,7 +100,7 @@ export default function TableView() {
 
       <div className="bg-white px-4 py-4 border-t border-gray-200 flex items-center justify-between">
         <button
-          onClick={() => page > 1 && setParams({ page: page - 1 })}
+          onClick={() => page > 1 && fetchPage(apiBaseUrl, page - 1)}
           disabled={page <= 1}
           className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
         >
@@ -110,7 +110,7 @@ export default function TableView() {
           Page <span className="font-medium">{page}</span>
         </span>
         <button
-          onClick={() => setParams({ page: page + 1 })}
+          onClick={() => fetchPage(apiBaseUrl, page + 1)}
           className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50"
         >
           Next

@@ -104,14 +104,14 @@ async def get_cover(
 ):
     final_seed = seed ^ (page * 0x9e3779b97f4a7c15) ^ (song_id * 0x9e3779b97f4a7c15)
     rng = random.Random(final_seed)
-    
     file_path = os.path.join(COVER_CACHE_DIR, f"{final_seed}_{lang}.png")
-    if os.path.exists(file_path):
-        return FileResponse(file_path, media_type="image/png")
 
     generate_cover_image(file_path, title, artist, rng)
-    
-    return FileResponse(file_path, media_type="image/png")
+    return FileResponse(
+        file_path,
+        media_type="image/png",
+        headers={"Cache-Control": "no-cache, no-store"}
+    )
 
 
 @router.get("/api/audio/{song_id}")

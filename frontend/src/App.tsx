@@ -4,6 +4,7 @@ import { useStore } from './store';
 import Toolbar from './components/Toolbar';
 import TableView from './components/TableView';
 import GalleryView from './components/GalleryView';
+import PlayerBar from './components/PlayerBar';
 
 function App() {
   const { fetchFirstPage, lang, seed, likes, currentView,songs } = useStore();
@@ -32,6 +33,7 @@ function App() {
       <div className="max-w-7xl mx-auto px-4">
         {currentView === 'table' ? <TableView /> : <GalleryView />}
       </div>
+      <PlayerBar />
     </div>
   );
 }

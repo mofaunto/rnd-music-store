@@ -1,21 +1,33 @@
-import React, { useState } from 'react';
+import { useState, Fragment, useEffect } from 'react';
 import { useStore } from '../store';
+import { Play, Pause } from 'lucide-react';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
+
+interface SongDetails {
+  cover_url: string;
+  review: string;
+  lyrics: string[];
+}
 
 export default function TableView() {
   const { songs, page, isLoading, expandedSongId, toggleExpand, lang, seed, fetchPage } = useStore();
-  const [details, setDetails] = useState<{ [key: number]: any }>({});
+  const [details, setDetails] = useState<{ [key: number]: SongDetails }>({});
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const { play, pause, currentSong, isPlaying } = useAudioPlayer();
+
+  useEffect(() => {
+    setDetails({});
+    }, [seed]);
 
   const handleExpand = async (songId: number) => {
     toggleExpand(songId);
-    
     if (expandedSongId !== songId && !details[songId]) {
       try {
         const res = await fetch(`${apiBaseUrl}/api/details/${songId}?lang=${lang}&seed=${seed}&page=${page}`);
         const data = await res.json();
         setDetails(prev => ({ ...prev, [songId]: data }));
       } catch (e) {
-        console.error("Failed to load details", e);
+        console.error('Failed to load details', e);
       }
     }
   };
@@ -42,10 +54,11 @@ export default function TableView() {
                 const isExpanded = expandedSongId === song.index;
                 const detailData = details[song.index];
                 const coverUrl = `${apiBaseUrl}/api/cover/${song.index}?lang=${lang}&seed=${seed}&page=${page}&title=${encodeURIComponent(song.title)}&artist=${encodeURIComponent(song.artist)}`;
+                const audioUrl = `${apiBaseUrl}/api/audio/${song.index}?seed=${seed}&page=${page}`;
 
                 return (
-                  <React.Fragment key={song.index}>
-                    <tr 
+                  <Fragment key={song.index}>
+                    <tr
                       className={`cursor-pointer hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-blue-50' : ''}`}
                       onClick={() => handleExpand(song.index)}
                     >
@@ -63,23 +76,39 @@ export default function TableView() {
                           {detailData ? (
                             <div className="flex flex-col sm:flex-row gap-6">
                               <div className="shrink-0 flex justify-center sm:justify-start">
-                                <img 
+                                <img
+                                  key={`${song.index}-${seed}-${page}`} // force re-render on seed change
                                   src={coverUrl}
-                                  alt="Album Cover" 
+                                  alt="Album Cover"
                                   className="w-32 h-32 rounded-lg shadow-md object-cover bg-gray-200"
                                 />
                               </div>
                               <div className="grow space-y-3">
                                 <div className="flex items-center gap-4">
-                                  <button className="px-4 py-2 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 transition-colors">
-                                    Play Preview
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (currentSong?.index === song.index && isPlaying) {
+                                        pause();
+                                      } else {
+                                        play(
+                                          { index: song.index, title: song.title, artist: song.artist, album: song.album },
+                                          audioUrl,
+                                          seed,
+                                          page
+                                        );
+                                      }
+                                    }}
+                                    className="px-3 py-1.5 bg-blue-500 text-white rounded-full text-xs hover:bg-blue-600 transition-colors flex items-center gap-1"
+                                  >
+                                    {currentSong?.index === song.index && isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />} Play Preview
                                   </button>
                                 </div>
                                 <div className="text-sm text-gray-700 italic bg-white p-3 rounded border border-gray-200">
                                   {detailData.review}
                                 </div>
                                 <div className="text-sm text-gray-600 border-l-4 border-gray-300 pl-3 py-1">
-                                  {detailData.lyrics.map((line: string, idx: number) => (
+                                  {detailData.lyrics.map((line, idx) => (
                                     <div key={idx} className="py-0.5">{line}</div>
                                   ))}
                                 </div>
@@ -91,7 +120,7 @@ export default function TableView() {
                         </td>
                       </tr>
                     )}
-                  </React.Fragment>
+                  </Fragment>
                 );
               })
             )}

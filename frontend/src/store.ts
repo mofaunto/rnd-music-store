@@ -47,6 +47,7 @@ export const useStore = create<AppState>((set, get) => ({
         updated.page = 1;
         updated.songs = [];
         updated.hasMore = true;
+        updated.expandedSongId = null;
       }
       return updated;
     });

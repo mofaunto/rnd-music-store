@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store';
-import { Heart } from 'lucide-react';
+import { Heart, Play, Pause } from 'lucide-react';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
 
 interface SongDetails {
   cover_url: string;
@@ -9,21 +10,11 @@ interface SongDetails {
 }
 
 export default function GalleryView() {
-  const { 
-    songs, 
-    page, 
-    isLoading, 
-    hasMore, 
-    expandedSongId, 
-    toggleExpand, 
-    lang, 
-    seed, 
-    fetchNextPage 
-  } = useStore();
-  
+  const { songs, page, isLoading, hasMore, expandedSongId, toggleExpand, lang, seed, fetchNextPage } = useStore();
   const [details, setDetails] = useState<{ [key: number]: SongDetails }>({});
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-  
+  const { play, pause, currentSong, isPlaying } = useAudioPlayer();
+
   const lastCardRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -35,10 +26,14 @@ export default function GalleryView() {
         const data = await res.json();
         setDetails(prev => ({ ...prev, [songId]: data }));
       } catch (e) {
-        console.error("Failed to load details", e);
+        console.error('Failed to load details', e);
       }
     }
   };
+
+  useEffect(() => {
+    setDetails({});
+  }, [seed]);
 
   useEffect(() => {
     if (isLoading || !hasMore) return;
@@ -70,22 +65,23 @@ export default function GalleryView() {
             const detailData = details[song.index];
             const pageForCover = Math.ceil(song.index / 10);
             const coverUrl = `${apiBaseUrl}/api/cover/${song.index}?lang=${lang}&seed=${seed}&page=${pageForCover}&title=${encodeURIComponent(song.title)}&artist=${encodeURIComponent(song.artist)}`;
+            const audioUrl = `${apiBaseUrl}/api/audio/${song.index}?seed=${seed}&page=${page}`;
 
             return (
-              <div 
+              <div
                 key={`${song.index}-${page}`}
                 ref={index === songs.length - 1 ? lastCardRef : null}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col"
                 onClick={() => handleExpand(song.index)}
               >
                 <div className="relative w-full aspect-square bg-gray-100">
-                  <img 
-                    key={`${song.index}-${page}`}
-                    src={coverUrl} 
-                    alt={`${song.title} cover`} 
+                  <img
+                    key={`${song.index}-${seed}-${page}`}
+                    src={coverUrl}
+                    alt={`${song.title} cover`}
                     className="w-full h-full object-cover"
                     loading="lazy"
-                    />
+                  />
                   <div className="absolute top-2 right-2 bg-black/60 flex flex-col items-center justify-center text-white text-xs font-medium px-2 py-1 gap-1 rounded-full">
                     <Heart className="w-3 h-3 fill-current" />
                     {song.likes}
@@ -104,21 +100,36 @@ export default function GalleryView() {
                 {isExpanded && detailData && (
                   <div className="border-t border-gray-100 p-4 bg-gray-50 text-sm space-y-3">
                     <div className="flex items-center gap-3">
-                      <button className="px-3 py-1.5 bg-blue-500 text-white rounded-full text-xs hover:bg-blue-600 transition-colors">
-                        ▶ Play Preview
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (currentSong?.index === song.index && isPlaying) {
+                            pause();
+                          } else {
+                            play(
+                              { index: song.index, title: song.title, artist: song.artist, album: song.album },
+                              audioUrl,
+                              seed,
+                              page
+                            );
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-blue-500 text-white rounded-full text-xs hover:bg-blue-600 transition-colors flex items-center gap-1"
+                      >
+                        {currentSong?.index === song.index && isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />} Play Preview
                       </button>
                     </div>
                     <div className="text-gray-600 italic leading-relaxed text-xs">
                       "{detailData.review}"
                     </div>
                     <div className="text-gray-500 border-l-2 border-blue-300 pl-3 text-xs space-y-1">
-                      {detailData.lyrics.map((line: string, idx: number) => (
+                      {detailData.lyrics.map((line, idx) => (
                         <div key={idx}>{line}</div>
                       ))}
                     </div>
                   </div>
                 )}
-                
+
                 {isExpanded && !detailData && (
                   <div className="border-t border-gray-100 p-4 bg-gray-50 text-xs text-gray-400 text-center">
                     Loading details...

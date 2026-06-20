@@ -1,5 +1,5 @@
 import { useStore } from '../store';
-import { Table, LayoutGrid, Music } from 'lucide-react';
+import { Table, LayoutGrid, Music, Download } from 'lucide-react';
 
 export default function Toolbar() {
   const { lang, seed, likes, currentView, setParams } = useStore();
@@ -7,6 +7,18 @@ export default function Toolbar() {
   const generateRandomSeed = () => {
     const newSeed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
     setParams({ seed: newSeed });
+  };
+
+  const handleExport = () => {
+    const { lang, seed, page, likes } = useStore.getState();
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+    const url = `${apiBaseUrl}/api/export/zip?lang=${lang}&seed=${seed}&page=${page}&likes=${likes}`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `songs_page_${page}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   return (
@@ -71,7 +83,7 @@ export default function Toolbar() {
       <div className="flex items-center bg-gray-100 p-1 rounded-lg shrink-0">
         <button
           onClick={() => setParams({ currentView: 'table' })}
-          className={`p-2 rounded-md transition-colors flex items-center justify-center ${
+          className={`hover:cursor-pointer p-2 rounded-md transition-colors flex items-center justify-center ${
             currentView === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'
           }`}
           title="Table View"
@@ -80,13 +92,21 @@ export default function Toolbar() {
         </button>
         <button
           onClick={() => setParams({ currentView: 'gallery' })}
-          className={`p-2 rounded-md transition-colors flex items-center justify-center ${
+          className={`hover:cursor-pointer p-2 rounded-md transition-colors flex items-center justify-center ${
             currentView === 'gallery' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'
           }`}
           title="Gallery View"
         >
           <LayoutGrid size={18} />
         </button>
+
+        <button
+        onClick={handleExport}
+        className="hover:cursor-pointer p-2 text-gray-500 hover:text-blue-600 transition-colors"
+        title="Download MP3 ZIP"
+      >
+        <Download size={18} />
+      </button>
       </div>
 
     </div>

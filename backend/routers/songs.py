@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse, FileResponse
 import math
 import random
 import os
+import io
+import zipfile
 from utils.locale import load_locales
 from utils.image_gen import generate_cover_image, COVER_CACHE_DIR
 from pathlib import Path
@@ -124,3 +126,57 @@ async def get_audio(
     
     audio_path = Path("static/audio") / f"track_{track_index}.mp3"
     return FileResponse(audio_path, media_type="audio/mpeg")
+
+
+@router.get("/api/export/zip")
+async def export_zip(
+    lang: str = Query("en-US", description="Language/Region code"),
+    seed: int = Query(12345, description="64-bit seed value"),
+    page: int = Query(1, description="Page number"),
+    likes: float = Query(0.0, description="Average likes per song")
+):
+
+    locale_data = LOCALES.get(lang, LOCALES.get("en-US", {}))
+    final_seed = seed ^ (page * 0x9e3779b97f4a7c15)
+    rng = random.Random(final_seed)
+
+    songs = []
+    for i in range(10):
+        if rng.random() < 0.5:
+            artist = f"{rng.choice(locale_data['first_names'])} {rng.choice(locale_data['last_names'])}"
+        else:
+            artist = f"{rng.choice(locale_data['band_prefixes'])} {rng.choice(locale_data['band_suffixes'])}"
+
+        title = f"{rng.choice(locale_data['album_adjectives'])} {rng.choice(locale_data['album_nouns'])}"
+        if rng.random() < 0.3:
+            album = "Single"
+        else:
+            album = f"{rng.choice(locale_data['album_adjectives'])} {rng.choice(locale_data['album_nouns'])}"
+
+        songs.append({
+            "index": (page - 1) * 10 + (i + 1),
+            "title": title,
+            "artist": artist,
+            "album": album,
+        })
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for song in songs:
+            track_index = abs((seed ^ (page * 0x9e3779b97f4a7c15) ^ (song["index"] * 0x9e3779b97f4a7c15))) % 100
+            mp3_path = Path("static/audio") / f"track_{track_index}.mp3"
+
+            if mp3_path.exists():
+                safe_title = "".join(c for c in song["title"] if c.isalnum() or c in (' ', '-', '_')).replace(' ', '_')
+                safe_artist = "".join(c for c in song["artist"] if c.isalnum() or c in (' ', '-', '_')).replace(' ', '_')
+                safe_album = "".join(c for c in song["album"] if c.isalnum() or c in (' ', '-', '_')).replace(' ', '_')
+
+                zip_filename = f"{safe_title}_{safe_album}_{safe_artist}.mp3"
+                zf.write(mp3_path, zip_filename)
+
+    zip_buffer.seek(0)
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename=songs_page_{page}.zip"}
+    )
